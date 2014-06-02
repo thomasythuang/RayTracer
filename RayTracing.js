@@ -88,8 +88,8 @@ var VSHADER_SOURCE =
     '  v_TexCoord = a_TexCoord;\n' +
     '  } \n' +
   '  else { \n' +
-  //'  gl_Position = u_MvpMatrix * b_Position;\n' +
-  '  gl_Position = b_Position; \n' + 
+  '  gl_Position = u_MvpMatrix * b_Position;\n' +
+  //'  gl_Position = b_Position; \n' + 
   '  } \n' +
   '}\n';
 
@@ -150,14 +150,14 @@ function main() {
     console.log('Failed to get the GPU storage location of u_isTexture');
     return false;
   }
-  /*
+  
   // Get the storage location of u_MvpMatrix
   u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
   if (!u_MvpMatrix) { 
     console.log('Failed to get the storage location of u_MvpMatrix');
     return;
   }
-  */
+  
   myScene = new CScene();
 
   // Specify how we will clear the WebGL context in <canvas>
@@ -181,7 +181,7 @@ function makeGroundGrid() {
   floatsPerVertex = 3;
   var xcount = 100;     // # of lines to draw in x,y to make the grid.
   var ycount = 100;   
-  var xymax = 50.0;     // grid size; extends to cover +/-xymax in x and y. 
+  var xymax = 10.0;     // grid size; extends to cover +/-xymax in x and y. 
   
   // Create an (global) array to hold this ground-plane's vertices:
   gndVerts = new Float32Array(floatsPerVertex*2*(xcount+ycount));
@@ -238,19 +238,23 @@ function initVertexBuffers(gl, gridCount) {
   ]);
   var n = 4; // The number of vertices
 
-  //var webGLverts = new Float32Array(gridCount*floatsPerVertex)//[
+  //var webGLverts = new Float32Array(gridCount*floatsPerVertex)
   var webGLverts = new Float32Array([
-  
+  ///*
     -0.95, 0.95,
     -0.95, -0.95,
     0.95,  0.95,
     0.95, -0.95,
   ]);
+  //*/
   /*
-  for (var p; p < gridCount*floatsPerVertex; p++){
+  for (var p = 0; p < gridCount*floatsPerVertex; p++){
     webGLverts[p] = gndVerts[p];
   }
-*/
+  */
+  console.log(webGLverts);
+  console.log(gndVerts);
+
   // Create the vertex buffer object in the GPU
   var vertexTexCoordBufferID = gl.createBuffer();
   if (!vertexTexCoordBufferID) {
@@ -301,6 +305,7 @@ function initVertexBuffers(gl, gridCount) {
     return -1;
   }
   gl.vertexAttribPointer(b_PositionID, 2, gl.FLOAT, false, FSIZE * 2, 0);
+  //gl.vertexAttribPointer(b_PositionID, 3, gl.FLOAT, false, FSIZE * 3, 0);
   gl.enableVertexAttribArray(b_PositionID);  // Enable the assignment of the buffer object
   
   return n;
@@ -414,8 +419,8 @@ function drawAll(gl,nV, gridCount) {
   						gl.drawingBufferHeight);
   // select fixed-color drawing:  
   gl.uniform1i(u_isTextureID, 0);						// DON'T use texture,
-  /*
-  vpAspect = gl.drawingBufferWidth /          // On-screen aspect ratio for
+  
+  vpAspect = (gl.drawingBufferWidth/2) /          // On-screen aspect ratio for
             gl.drawingBufferHeight;           // this camera: width/height.
 
   mvpMatrix.setPerspective(24.0,        // fovy: y-axis field-of-view in degrees  
@@ -423,10 +428,11 @@ function drawAll(gl,nV, gridCount) {
                             vpAspect,   // aspect ratio: width/height
                             1, 100);    // near, far (always >0).
 
-  mvpMatrix.lookAt( 5, 5, 5,          // 'Center' or 'Eye Point',
+  mvpMatrix.lookAt( 0, 1, 15,          // 'Center' or 'Eye Point',
                     0, 0, 0,             // look-At point,
                     0, 1, 0);         // View UP vector, all in 'world' coords.
-  */
+  
+  gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
   //gl.drawArrays(gl.LINES, 0, gridCount);
   gl.drawArrays(gl.LINE_STRIP, 0, nV); 	// Draw a simple red square
  	//------------------------------------------
