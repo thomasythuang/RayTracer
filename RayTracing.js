@@ -181,7 +181,7 @@ function makeGroundGrid() {
   floatsPerVertex = 3;
   var xcount = 100;     // # of lines to draw in x,y to make the grid.
   var ycount = 100;   
-  var xymax = 10.0;     // grid size; extends to cover +/-xymax in x and y. 
+  var xymax = 50.0;     // grid size; extends to cover +/-xymax in x and y. 
   
   // Create an (global) array to hold this ground-plane's vertices:
   gndVerts = new Float32Array(floatsPerVertex*2*(xcount+ycount));
@@ -228,32 +228,37 @@ function makeGroundGrid() {
 
 function initVertexBuffers(gl, gridCount) {
 //==============================================================================
-// 4 vertices for a texture-mapped 'quad' (square) to fill almost all of the CVV
-  var verticesTexCoords = new Float32Array([
-    // Quad vertex coordinates(x,y in CVV); texture coordinates tx,ty
-    -0.95,  0.95,   	0.0, 1.0,				// upper left corner,
-    -0.95, -0.95,   	0.0, 0.0,				// lower left corner,
-     0.95,  0.95,   	1.0, 1.0,				// upper right corner,
-     0.95, -0.95,   	1.0, 0.0,				// lower left corner.
-  ]);
-  var n = 4; // The number of vertices
 
-  //var webGLverts = new Float32Array(gridCount*floatsPerVertex)
-  var webGLverts = new Float32Array([
-  ///*
-    -0.95, 0.95,
-    -0.95, -0.95,
-    0.95,  0.95,
-    0.95, -0.95,
-  ]);
-  //*/
+  var webGLverts = new Float32Array(gridCount*floatsPerVertex)
+  //var webGLverts = new Float32Array([
   /*
+    -1, 1, 0,   
+    -1, -1, 0,
+    1,  1, 0,
+    1, -1, 0,
+    1, -1, -2,
+    -1, -1, -2,
+    -1, 1, -2,
+  ]);
+  */
+  ///*
   for (var p = 0; p < gridCount*floatsPerVertex; p++){
     webGLverts[p] = gndVerts[p];
   }
-  */
+  //*/
+  var n = webGLverts.length/3;
   console.log(webGLverts);
   console.log(gndVerts);
+
+  // 4 vertices for a texture-mapped 'quad' (square) to fill almost all of the CVV
+  var verticesTexCoords = new Float32Array(webGLverts.length*4/3);
+  verticesTexCoords.set([
+    // Quad vertex coordinates(x,y in CVV); texture coordinates tx,ty
+    -0.95,  0.95,     0.0, 1.0,       // upper left corner,
+    -0.95, -0.95,     0.0, 0.0,       // lower left corner,
+     0.95,  0.95,     1.0, 1.0,       // upper right corner,
+     0.95, -0.95,     1.0, 0.0,       // lower left corner.
+  ]);
 
   // Create the vertex buffer object in the GPU
   var vertexTexCoordBufferID = gl.createBuffer();
@@ -304,8 +309,8 @@ function initVertexBuffers(gl, gridCount) {
     console.log('Failed to get the GPU storage location of b_Position');
     return -1;
   }
-  gl.vertexAttribPointer(b_PositionID, 2, gl.FLOAT, false, FSIZE * 2, 0);
-  //gl.vertexAttribPointer(b_PositionID, 3, gl.FLOAT, false, FSIZE * 3, 0);
+  //gl.vertexAttribPointer(b_PositionID, 2, gl.FLOAT, false, FSIZE * 2, 0);
+  gl.vertexAttribPointer(b_PositionID, 3, gl.FLOAT, false, FSIZE * 3, 0);
   gl.enableVertexAttribArray(b_PositionID);  // Enable the assignment of the buffer object
   
   return n;
@@ -423,18 +428,18 @@ function drawAll(gl,nV, gridCount) {
   vpAspect = (gl.drawingBufferWidth/2) /          // On-screen aspect ratio for
             gl.drawingBufferHeight;           // this camera: width/height.
 
-  mvpMatrix.setPerspective(24.0,        // fovy: y-axis field-of-view in degrees  
+  mvpMatrix.setPerspective(45.0,        // fovy: y-axis field-of-view in degrees  
                                         // (top <-> bottom in view frustum)
                             vpAspect,   // aspect ratio: width/height
                             1, 100);    // near, far (always >0).
 
-  mvpMatrix.lookAt( 0, 1, 15,          // 'Center' or 'Eye Point',
+  mvpMatrix.lookAt( 0, 20, 20,          // 'Center' or 'Eye Point',
                     0, 0, 0,             // look-At point,
                     0, 1, 0);         // View UP vector, all in 'world' coords.
-  
+  console.log(nV);
   gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
-  //gl.drawArrays(gl.LINES, 0, gridCount);
-  gl.drawArrays(gl.LINE_STRIP, 0, nV); 	// Draw a simple red square
+  gl.drawArrays(gl.LINES, 0, nV);
+  
  	//------------------------------------------
   // Draw in the RIGHT viewport:
   //------------------------------------------
@@ -443,9 +448,9 @@ function drawAll(gl,nV, gridCount) {
   						gl.drawingBufferWidth/2, 				// viewport width, height.
   						gl.drawingBufferHeight);
 	gl.uniform1i(u_isTextureID, 1);					// DO use texture,
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, nV); 	// Draw the textured rectangle
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); 	// Draw the textured rectangle
   //----------------------------------------- 
-
+  
 }
 
 function browserResize() {
