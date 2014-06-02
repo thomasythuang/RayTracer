@@ -115,6 +115,14 @@ var u_isTexture = 0;							// ==0 false--use fixed colors in frag shader
 																	// ==1 true --use texture-mapping in frag shader
 var u_isTextureID = 0;						// GPU location of this uniform var
 var mvpMatrix = new Matrix4();
+var DEFAULT_EYE_X = 20, DEFAULT_EYE_Y = 15, DEFAULT_EYE_Z = 20;
+var DEFAULT_LOOK = 0.00;
+var EyeX = DEFAULT_EYE_X, EyeY = DEFAULT_EYE_Y, EyeZ = DEFAULT_EYE_Z;//Eye Position
+var lookX = DEFAULT_LOOK, lookY = DEFAULT_LOOK, lookZ = DEFAULT_LOOK;//Look at Point
+var g_last = Date.now();
+var rotSpeed = 0.05;      //Camera rotation speed
+var paused = false;
+var gl;
 
 function main() {
 //==============================================================================
@@ -122,7 +130,7 @@ function main() {
   var canvas = document.getElementById('webgl');
 
   // Get the rendering context for WebGL
-  var gl = getWebGLContext(canvas);
+  gl = getWebGLContext(canvas);
   if (!gl) {
     console.log('Failed to get the rendering context for WebGL');
     return;
@@ -167,10 +175,152 @@ function main() {
   // Create, load, enable texture buffer object (TBO) in graphics hardware
   if (!initTextures(gl, n)) {
     console.log('Failed to intialize the texture.');
-    return;
+    //return;
   }
+
+  //Event handler for key presses
+  document.onkeydown = function(ev, n, myScene){keydown(ev, n, myScene);};
+  ///*
+  tick = function(n, scene) {
+    if (paused)
+      return;
+    timeStep = animate();     //Get time passed since last screen redraw
+    drawAll(n, scene);
+    console.log("stop?");
+    //meter.tick();                   //Tick for FPS meter
+    requestAnimationFrame(function(){
+      tick(n, scene);            
+    });
+  };
+  tick(n, myScene); //*/
+
 	// Draw the WebGL preview (right) and ray-traced result (left).
-  drawAll(gl,n, myScene, gridCount);
+  //drawAll(n, myScene);
+}
+
+function keydown(ev, n, myScene){
+  switch(ev.keyCode)
+  {
+    case 69:        //E key
+      EyeZ += 1;
+      //zpos.innerHTML = EyeZ;
+      break;
+    case 81:        //Q key
+      EyeZ -= 1;
+      //zpos.innerHTML = EyeZ;
+      break;
+    case 87:        //W key
+      EyeY += 1;
+      //ypos.innerHTML = EyeY; 
+      break;
+    case 83:        //S key
+      EyeY -= 1;
+      //ypos.innerHTML = EyeY;
+      break;
+    case 65:        //A key
+      EyeX -= 1;
+      //xpos.innerHTML = EyeX;
+      break;
+    case 68:        //D key
+      EyeX += 1;
+      //xpos.innerHTML = EyeX;
+      break;
+    case 85:        //U key
+      lookZ -= 0.5;
+      break;
+    case 79:        //O key
+      lookZ += 0.5;
+      break;
+    case 73:        //I key
+      lookY += 0.5;
+      break;
+    case 75:        //K key
+      lookY -= 0.5;
+      break;
+    case 74:        //J key
+      lookX -= 0.5;
+      break;
+    case 76:        //L key
+      lookX += 0.5;
+      break;
+    case 32:        //Space bar: pause
+      paused = !paused;
+      if (!paused)
+        tick(n, myScene);
+      break; 
+    case 82:        //R: Reset camera
+      EyeX = DEFAULT_EYE_X;
+      EyeY = DEFAULT_EYE_Y;
+      EyeZ = DEFAULT_EYE_Z;
+      lookX = lookY = lookZ = DEFAULT_LOOK;
+      break;
+    case 37:        //Left arrow key
+      rotate("left");
+      break;
+    case 39:        //Right arrow key
+      rotate("right");
+      break;
+    case 38:        //Up arrow key
+      rotate("up");
+      break;
+    case 40:        //Down arrow key
+      rotate("down");
+      break;
+    /* case 72:        //H key
+      if (help)
+      {
+        controls.innerHTML = "Press H for help <br> <br> <br> <br>";
+        controls2.innerHTML = "";
+        controls3.innerHTML = "";
+      }
+      else
+      {
+        controls.innerHTML = "Press H to toggle off help<br>A/D, W/S, Q/E: Move Camera along x/y/z<br>Left/Right,Up/Down: Pan/Tilt camera<br>J/L, I/K, U/O: Move LookAt point along x/y/z";
+        //controls.innerHTML = "Press H to toggle off help<br>A and D: Move camera along X<br>W and S: Move camera along Y<br>Q and E: Move camera along Z";
+        controls2.innerHTML = "R: Reset Camera<br>1-5: Change solver type<br>B: Toggle Wall dampening<br><br>";
+        controls3.innerHTML = "";
+      }
+      help = !help;
+      break; */
+    default: return;
+  }
+  //drawAll(n, myScene);
+}
+
+function animate(){
+  var now = Date.now();                       
+  var elapsed = now - g_last;               
+  g_last = now;  
+  return elapsed;         //Return the amount of time passed.
+}
+
+//Rotation of camera: Up/down/left/right
+function rotate(dir){
+//Temp vars
+var tempx = EyeX - lookX;
+var tempy = EyeY - lookY;
+var tempz = EyeZ - lookZ;
+
+  switch(dir)
+  {
+    case "left":
+      EyeX = tempx*Math.cos(rotSpeed) - tempz*Math.sin(rotSpeed) + lookX;
+      EyeZ = tempz*Math.cos(rotSpeed) + tempx*Math.sin(rotSpeed) + lookZ;
+      break;
+    case "right":
+      EyeX = tempx*Math.cos(rotSpeed) + tempz*Math.sin(rotSpeed) + lookX;
+      EyeZ = tempz*Math.cos(rotSpeed) - tempx*Math.sin(rotSpeed) + lookZ;
+      break;
+    case "up":  //Fix up and down
+      EyeY = tempy*Math.cos(rotSpeed) + tempz*Math.sin(rotSpeed) + lookY;
+      EyeZ = tempz*Math.cos(rotSpeed) - tempy*Math.sin(rotSpeed) + lookX;
+      break;
+    case "down":
+      EyeY = tempy*Math.cos(rotSpeed) - tempz*Math.sin(rotSpeed) + lookY;
+      EyeZ = tempz*Math.cos(rotSpeed) + tempy*Math.sin(rotSpeed) + lookX;
+      break;
+    default:return;
+  }
 }
 
 //Draw ground grid as well as constraints
@@ -223,6 +373,7 @@ function makeGroundGrid() {
     gndVerts[j+4] = yColr[1];     
     gndVerts[j+5] = yColr[2]; */
   }
+
   return gndVerts.length/3;
 }
 
@@ -400,10 +551,10 @@ function loadTexture(gl, n, textureID, u_SampleID, myImg) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   // Set the texture unit 0 to be driVen by the sampler
   gl.uniform1i(u_SamplerID, 0);
-	drawAll(gl, n);
+	//drawAll(gl, n);
 }
 
-function drawAll(gl,nV, gridCount) {
+function drawAll(nV, gridCount) {
 //==============================================================================
 // Clear <canvas> color AND DEPTH buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -433,10 +584,9 @@ function drawAll(gl,nV, gridCount) {
                             vpAspect,   // aspect ratio: width/height
                             1, 100);    // near, far (always >0).
 
-  mvpMatrix.lookAt( 0, 20, 20,          // 'Center' or 'Eye Point',
-                    0, 0, 0,             // look-At point,
+  mvpMatrix.lookAt( EyeX, EyeY, EyeZ,          // 'Center' or 'Eye Point',
+                    lookX, lookY, lookZ,             // look-At point,
                     0, 1, 0);         // View UP vector, all in 'world' coords.
-  console.log(nV);
   gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
   gl.drawArrays(gl.LINES, 0, nV);
   
