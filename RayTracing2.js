@@ -137,18 +137,10 @@ function pushVec(v, arr) {
 t = 0;
 function drawScene()
 {
-  x1 = -2;//Math.sin(t * 1.1) * 1.5;
-  y1 = 2;//Math.cos(t * 1.3) * 1.5;
-  z1 = -1;//Math.sin(t + Math.PI/3) * 1.5;
-  x2 = 2;//Math.cos(t * 1.2) * 1.5;
-  y2 = 2;//Math.sin(t * 1.4) * 1.5;
-  z2 = 2;//Math.sin(t*1.25 - Math.PI/3) * 1.5;
-  x3 = -1;//Math.cos(t * 1.15) * 1.5;
-  y3 = 0;//Math.sin(t * 1.37) * 1.5;
-  z3 = 1;//Math.sin(t*1.27) * 1.5;
-  x4 = 0;
-  y4 = -1;
-  z4 = -1;
+  x1 = -0.5,  y1 = 1,     z1 = -3;
+  x2 = 2,     y2 = 1,     z2 = 0;
+  x3 = -2,    y3 = -1,    z3 = 1;
+  x4 = 0,     y4 = -1.5,  z4 = -1;
 
   cameraFrom = { x: EyeX,//Math.sin(t * 0.4) * 18,
                  y: EyeY,//Math.sin(t * 0.13) * 5 + 5,
@@ -360,45 +352,3 @@ var tempz = EyeZ - lookZ;
     default:return;
   }
 }
-/*
-function resizeCanvas(w)
-{
-  if (w == -1) {
-    document.getElementById('contrib').style.display = "none";
-    canvas.style.display = "none";
-    canvas.parentNode.style.position = "absolute";
-    canvas.parentNode.style.top = 0;
-    w = canvas.parentNode.parentNode.offsetWidth;
-    ratio = w / canvas.parentNode.parentNode.offsetHeight;
-    canvas.style.display = "";
-  }
-  else { 
-    document.getElementById('contrib').style.display = "";
-    ratio = 1.6;
-    canvas.parentNode.style.position = "";
-    canvas.parentNode.style.top = "";
-    window.onresize = null; 
-  }
-  canvas.width = w;
-  canvas.height = w / ratio;
-
-  gl.viewport(0, 0, canvas.width, canvas.height);
-
-  t -= 0.03;
-  drawScene();
-} 
-
-//var resizeTimer = false; 
-
-function fullScreen() {
-  window.onresize = function() {
-    if (resizeTimer) {
-      clearTimeout(resizeTimer);
-    }
-    resizeTimer = setTimeout(function() {
-      fullScreen();
-    }, 100);
-  };
-  
-  resizeCanvas(-1); 
-}  */

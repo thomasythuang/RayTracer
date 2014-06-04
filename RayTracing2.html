@@ -35,11 +35,13 @@
   uniform vec3 sphere4Center;
 
   //Calculate the intersection (or non-intersection) or a ray and a sphere
-  bool intersectSphere(vec3 center, vec3 lStart, vec3 lDir,
-                       out float dist) {
+  bool intersectSphere(vec3 center, vec3 lStart, vec3 lDir, 
+                       out float dist, float size) {
     vec3 c = center - lStart;
     float b = dot(lDir, c);
-    float d = b*b - dot(c, c) + 1.0;
+    float d = b*b - dot(c, c);
+    d = d + size;
+
     if (d < 0.0) {
       dist = 10000.0;
       return false;
@@ -74,10 +76,10 @@
     bool h1, h2, h3, h4;
 
     //Calculate if spheres intersect with rays
-    h1 = intersectSphere(sphere1Center, lStart, lDir, d1);
-    h2 = intersectSphere(sphere2Center, lStart, lDir, d2);
-    h3 = intersectSphere(sphere3Center, lStart, lDir, d3);
-    h4 = intersectSphere(sphere4Center, lStart, lDir, d4);
+    h1 = intersectSphere(sphere1Center, lStart, lDir, d1, 1.0);
+    h2 = intersectSphere(sphere2Center, lStart, lDir, d2, 1.0);
+    h3 = intersectSphere(sphere3Center, lStart, lDir, d3, 1.0);
+    h4 = intersectSphere(sphere4Center, lStart, lDir, d4, 1.0);
 
     //If hitting a sphere, set color of the front-most sphere
     if (h1 && d1 < d2 && d1 < d3 && d1 < d4) {
