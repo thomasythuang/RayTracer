@@ -137,21 +137,23 @@
       if (intersectWorld(p1, cameraDir, p2, norm, colT)) {
         col += lightAt(norm, -cameraDir, colT) * colM;
         colM *= (colT + vec3(0.7)) / 1.7;
+        /*
         cameraDir = reflect(cameraDir, norm);
         if (intersectWorld(p2, cameraDir, p1, norm, colT)) {
           col += lightAt(norm, -cameraDir, colT) * colM;
         }
+        */
       }
       gl_FragColor = vec4(col, 1.0);
     }
     else {
-      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+      gl_FragColor = vec4(0.2, 0.7, 0.9, 1.0);
     }
   }
 </script>
 </head>
 
-<body onload="main(); runToggle()" style="height: 100%; margin: 0">  
+<body onload="main()" style="height: 100%; margin: 0">  
   <div style="height:100%; margin: 0;">
     <div style="text-align:center; padding: 1em;">
       <input type=button onclick="runToggle()" value=pause>

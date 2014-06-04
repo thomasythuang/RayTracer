@@ -216,17 +216,32 @@ function main()
   initBuffers();
 
   document.onkeydown = function(ev){keydown(ev);};
+
+  tick();
 }
 
-function runToggle()
+function tick()
 {
-  if (timer) {
-    clearInterval(timer);
-    timer = 0;
+  drawScene();
+  //console.log("running");
+  requestAnimationFrame(function(){
+      tick();            
+  });
+}
+
+function pause()
+{
+  /*
+  paused = !paused;
+  if (paused) {
+    tick();
   }
   else {
-    timer = setInterval(drawScene, 15);
+    cancelAnimationFrame(function(){
+      tick();});
+    return;
   }
+  */
 }
 
 var ratio = 1; 
@@ -276,12 +291,10 @@ function keydown(ev){
     case 76:        //L key
       lookX += 0.5;
       break;
-      /*
+      
     case 32:        //Space bar: pause
-      paused = !paused;
-      if (!paused)
-        tick(n, myScene);
-      break; */
+      pause();
+      break; 
     case 82:        //R: Reset camera
       EyeX = DEFAULT_EYE_X;
       EyeY = DEFAULT_EYE_Y;
