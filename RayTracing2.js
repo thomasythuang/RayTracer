@@ -159,10 +159,10 @@ function drawScene(num)
     gl.uniform3f(color4, 0.043, 0.38, 0.517)
   }
   else{
-    x1 = -2.5,  y1 = 0,     z1 = -1;
-    x2 = 2,     y2 = 1,     z2 = -1;
-    x3 = 0,    y3 = -1.5,    z3 = -3;
-    x4 = 0.5,     y4 = -1.5,  z4 = 1;
+    x1 = 2.5,  y1 = 0,     z1 = -4;
+    x2 = -2,     y2 = 1,     z2 = -1;
+    x3 = 0,    y3 = -1.5,    z3 = 1;
+    x4 = 0.5,     y4 = -1.5,  z4 = -3;
 
     gl.uniform3f(color1, 0.0, 0.8, 0.0)
     gl.uniform3f(color2, 0.0, 0.6, 0.6)
