@@ -26,13 +26,18 @@
 <script id="shader-fs" type="x-shader/x-fragment">
   precision mediump float;
 
-  const vec3 lightDir = vec3(0.577350269, 0.577350269, -0.577350269);
+  uniform vec3 lightDir;
   varying vec3 vPosition;
   uniform vec3 cameraPos;
   uniform vec3 sphere1Center;
   uniform vec3 sphere2Center;
   uniform vec3 sphere3Center;
   uniform vec3 sphere4Center;
+  uniform vec3 color1;
+  uniform vec3 color2;
+  uniform vec3 color3;
+  uniform vec3 color4;
+  uniform int depth;
 
   //Calculate the intersection (or non-intersection) or a ray and a sphere
   bool intersectSphere(vec3 center, vec3 lStart, vec3 lDir, 
@@ -71,9 +76,10 @@
 
   //Calculate intersection of rays with the whole scene
   bool intersectWorld(vec3 lStart, vec3 lDir, out vec3 pos,
-                      out vec3 normal, out vec3 color) {
+                      out vec3 normal, out vec3 color, int level, out bool shape) {
     float d1, d2, d3, d4;
     bool h1, h2, h3, h4;
+    bool prevShape = shape; //Whether or not the ray was previously reflected off a shape
 
     //Calculate if spheres intersect with rays
     h1 = intersectSphere(sphere1Center, lStart, lDir, d1, 1.0);
@@ -85,22 +91,26 @@
     if (h1 && d1 < d2 && d1 < d3 && d1 < d4) {
       pos = lStart + d1 * lDir;
       normal = pos - sphere1Center;
-      color = vec3(1.0, 0.5725, 0.0);
+      color = color1;
+      shape = false;
     }
     else if (h2 && d2 < d3 && d2 < d4) {
       pos = lStart + d2 * lDir;
       normal = pos - sphere2Center;
-      color = vec3(1.0, 0.749, 0.0);
+      color = color2;
+      shape = false;
     }
     else if (h3 && d3 < d4) {
       pos = lStart + d3 * lDir;
       normal = pos - sphere3Center;
-      color = vec3(0.106, 0.106, 0.702);
+      color = color3;
+      shape = false;
     }
-    else if (h4){
+    else if (h4){ 
       pos = lStart + d4 * lDir;
       normal = pos - sphere4Center;
-      color = vec3(0.043, 0.38, 0.517);
+      color = color4;
+      shape = true;
     }
     else if (lDir.y < -0.01) {
       pos = lStart + ((lStart.y + 2.7) / -lDir.y) * lDir;
@@ -121,7 +131,6 @@
     else {
      return false;
     }
-
     return true;
   }
 
@@ -131,20 +140,39 @@
 
     vec3 p1, norm, p2;
     vec3 col, colT, colM, col3;
+    bool shape = false; //Whether or not a ray is reflected off a shape (affects reflectance)
     if (intersectWorld(cameraPos, cameraDir, p1,
-                       norm, colT)) {
+                       norm, colT, 0, shape)) {
       col = lightAt(norm, -cameraDir, colT);
-      colM = (colT + vec3(0.7)) / 1.7;
-      cameraDir = reflect(cameraDir, norm);
-      if (intersectWorld(p1, cameraDir, p2, norm, colT)) {
-        col += lightAt(norm, -cameraDir, colT) * colM;
-        colM *= (colT + vec3(0.7)) / 1.7;
-        /*
+      if (shape)
+        colM = (colT + vec3(0.1)) / 1.7;
+      else
+        colM = (colT + vec3(0.9)) / 1.7;
+      if (depth > 0){
         cameraDir = reflect(cameraDir, norm);
-        if (intersectWorld(p2, cameraDir, p1, norm, colT)) {
+        if (intersectWorld(p1, cameraDir, p2, norm, colT, 1, shape)) {
           col += lightAt(norm, -cameraDir, colT) * colM;
+          if (shape)
+            colM = (colT + vec3(0.1)) / 1.7;
+          else
+            colM *= (colT + vec3(0.7)) / 1.7;
+          if (depth > 1){
+            cameraDir = reflect(cameraDir, norm);
+            if (intersectWorld(p2, cameraDir, p1, norm, colT, 2, shape)) {
+              col += lightAt(norm, -cameraDir, colT) * colM;
+              if (shape)
+                colM = (colT + vec3(0.1)) / 1.7;
+              else
+                colM *= (colT + vec3(0.7)) / 1.7;
+              if (depth > 2){
+                cameraDir = reflect(cameraDir, norm);
+                if (intersectWorld(p2, cameraDir, p1, norm, colT, 3, shape)) {
+                  col += lightAt(norm, -cameraDir, colT) * colM;
+                }
+              }
+            }
+          }
         }
-        */
       }
       gl_FragColor = vec4(col, 1.0);
     }
@@ -156,12 +184,52 @@
 </head>
 
 <body onload="main()" style="height: 100%; margin: 0">  
-  <div style="height:100%; margin: 0;">
-    <div style="text-align:center; padding: 1em;">
-      <input type=button onclick="runToggle()" value=pause>
-    </div>
-    <div style="z-index:-1; text-align:center; width:100%;">
+  <div style="height:100%; margin: 0; text-align:center;">
+    <div style="z-index:-1; text-align:center; width:100%; padding-top:2em; padding-bottom:1em">
       <canvas id="canvas" style="border: none;" width="800" height="400"></canvas>
+    </div>
+    <div style="text-align:center;">
+      <div style="width:800px; height:400px; margin:auto; text-align:left; border:1px solid black;">
+        <div>
+          <div style="display:inline-block; margin-left:10px">
+            Camera Position<br>
+            X: <span id="xpos"></span><br>
+            Y: <span id="ypos"></span><br>
+            Z: <span id="zpos"></span>
+          </div>
+          <div style="display:inline-block; margin-left:20px">
+            Look-At Position:<br>
+            X: <span id="lookx"></span><br>
+            Y: <span id="looky"></span><br>
+            Z: <span id="lookz"></span>
+          </div>
+          <div style="display:inline-block; margin-left:20px">
+            Light Position:<br>
+            X: <span id="lx"></span><br>
+            Y: <span id="ly"></span><br>
+            Z: <span id="lz"></span>
+          </div>
+          <div style="display:inline-block; margin-left:20px">
+            Light Vector:<br>
+            X: <span id="lvx"></span><br>
+            Y: <span id="lvy"></span><br>
+            Z: <span id="lvz"></span>
+          </div>
+          <div style="display:inline-block; margin-left:20px">
+            Recursion Depth: <span id="rDepth"></span><br>
+            (Possible depths: 0-3)<br><br><br>
+          </div>
+        </div> 
+        <div> 
+          <div id="controls" style="display:inline-block; margin-left:10px">
+            Press H for Help <br> <br> <br> <br>
+          </div>
+          <div id="controls2" style="display:inline-block; margin-left:20px">
+          </div>
+          <div id="controls3" style="display:inline-block; margin-left:20px">
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div style="margin: -8em 1em 0;" id="contrib">
