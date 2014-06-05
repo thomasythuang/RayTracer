@@ -33,10 +33,12 @@
   uniform vec3 sphere2Center;
   uniform vec3 sphere3Center;
   uniform vec3 sphere4Center;
-  uniform vec3 color1;
-  uniform vec3 color2;
-  uniform vec3 color3;
-  uniform vec3 color4;
+  uniform vec3 cube1Center;
+  uniform vec3 sColor1;
+  uniform vec3 sColor2;
+  uniform vec3 sColor3;
+  uniform vec3 sColor4;
+  uniform vec3 cColor1;
   uniform int depth;
 
   //Calculate the intersection (or non-intersection) or a ray and a sphere
@@ -48,6 +50,28 @@
     d = d + size;
 
     if (d < 0.0) {
+      dist = 10000.0;
+      return false;
+    }
+
+    dist = b - sqrt(d);
+    if (dist < 0.0) {
+      dist = 10000.0;
+      return false;
+    }
+
+    return true;
+  }
+
+  bool intersectCube(vec3 center, vec3 lStart, vec3 lDir, 
+                     out float dist, float size){
+    vec3 c = center - lStart;
+    float b = dot(lDir, c);
+    float d = b*b - dot(c, c);
+    //vec3 e = abs(center - vPosition);
+    d = d + size;
+
+    if (d < 0.0){
       dist = 10000.0;
       return false;
     }
@@ -77,8 +101,8 @@
   //Calculate intersection of rays with the whole scene
   bool intersectWorld(vec3 lStart, vec3 lDir, out vec3 pos,
                       out vec3 normal, out vec3 color, int level, out bool shape) {
-    float d1, d2, d3, d4;
-    bool h1, h2, h3, h4;
+    float d1, d2, d3, d4, d5;
+    bool h1, h2, h3, h4, h5;
     bool prevShape = shape; //Whether or not the ray was previously reflected off a shape
 
     //Calculate if spheres intersect with rays
@@ -86,31 +110,38 @@
     h2 = intersectSphere(sphere2Center, lStart, lDir, d2, 0.6);
     h3 = intersectSphere(sphere3Center, lStart, lDir, d3, 1.0);
     h4 = intersectSphere(sphere4Center, lStart, lDir, d4, 1.0);
+    h5 = intersectCube(cube1Center, lStart, lDir, d5, 1.0);
 
     //If hitting a sphere, set color of the front-most sphere
-    if (h1 && d1 < d2 && d1 < d3 && d1 < d4) {
+    if (h1 && d1 < d2 && d1 < d3 && d1 < d4 && d1 < d5) {
       pos = lStart + d1 * lDir;
       normal = pos - sphere1Center;
-      color = color1;
+      color = sColor1;
       shape = false;
     }
-    else if (h2 && d2 < d3 && d2 < d4) {
+    else if (h2 && d2 < d3 && d2 < d4 && d2 < d5) {
       pos = lStart + d2 * lDir;
       normal = pos - sphere2Center;
-      color = color2;
+      color = sColor2;
       shape = false;
     }
-    else if (h3 && d3 < d4) {
+    else if (h3 && d3 < d4 && d3 < d5) {
       pos = lStart + d3 * lDir;
       normal = pos - sphere3Center;
-      color = color3;
+      color = sColor3;
       shape = false;
     }
-    else if (h4){ 
+    else if (h4 && d4 < d5){ 
       pos = lStart + d4 * lDir;
       normal = pos - sphere4Center;
-      color = color4;
+      color = sColor4;
       shape = true;
+    }
+    else if (h5){
+      pos = lStart + d5 * lDir;
+      normal = pos - cube1Center;
+      color = cColor1;
+      shape = false;
     }
     else if (lDir.y < -0.01) {
       pos = lStart + ((lStart.y + 2.7) / -lDir.y) * lDir;
@@ -189,7 +220,7 @@
       <canvas id="canvas" style="border: none;" width="800" height="400"></canvas>
     </div>
     <div style="text-align:center;">
-      <div style="width:800px; height:400px; margin:auto; text-align:left; border:1px solid black;">
+      <div style="width:800px; margin:auto; text-align:left; padding:10px; border:1px solid black;">
         <div>
           <div style="display:inline-block; margin-left:10px">
             Camera Position<br>
@@ -220,13 +251,20 @@
             (Possible depths: 0-3)<br><br><br>
           </div>
         </div> 
-        <div> 
-          <div id="controls" style="display:inline-block; margin-left:10px">
-            Press H for Help <br> <br> <br> <br>
+        <br>
+        <div id="controls" style="margin-left:10px">
+          Press H to Hide/Show Controls
+        </div>
+        <div id="controls1" style="display:block; margin-left:10px">
+          <div style="display:inline-block; margin-left:0px">
+            D/A, W/S, E/Q: &nbsp&nbsp&nbsp&nbsp&nbsp Move Camera along x/y/z axes<br>
+            L/J, I/K, O/U: &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp Move Look-At Point along x/y/z axes<br>
+            (Numpad only) 1-6: Move light source along x/y/z axes <br>
           </div>
-          <div id="controls2" style="display:inline-block; margin-left:20px">
-          </div>
-          <div id="controls3" style="display:inline-block; margin-left:20px">
+          <div style="display:inline-block; margin-left: 20px">
+            Arrow Keys: Rotate/Tilt Camera<br>
+            , . (Comma and Period): Decrease or increase recursion depth<br>
+            R: Reset camera values<br>
           </div>
         </div>
       </div>

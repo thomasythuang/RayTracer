@@ -14,6 +14,7 @@ var rotStep = 0.05;      //Camera rotation step
 var paused = false;
 var sceneNum = 1;
 var depth = 1;
+var help = true;
 
 function initGL(canvas) {
   try {
@@ -89,10 +90,12 @@ function initShaders()
   sphere2Center = gl.getUniformLocation(shaderProgram, "sphere2Center");
   sphere3Center = gl.getUniformLocation(shaderProgram, "sphere3Center");
   sphere4Center = gl.getUniformLocation(shaderProgram, "sphere4Center");
-  color1 = gl.getUniformLocation(shaderProgram, "color1");
-  color2 = gl.getUniformLocation(shaderProgram, "color2");
-  color3 = gl.getUniformLocation(shaderProgram, "color3");
-  color4 = gl.getUniformLocation(shaderProgram, "color4");
+  cube1Center = gl.getUniformLocation(shaderProgram, "cube1Center");
+  sColor1 = gl.getUniformLocation(shaderProgram, "sColor1");
+  sColor2 = gl.getUniformLocation(shaderProgram, "sColor2");
+  sColor3 = gl.getUniformLocation(shaderProgram, "sColor3");
+  sColor4 = gl.getUniformLocation(shaderProgram, "sColor4");
+  cColor1 = gl.getUniformLocation(shaderProgram, "cColor1");
   depthID = gl.getUniformLocation(shaderProgram, "depth");
 }
 
@@ -148,26 +151,30 @@ t = 0;
 function drawScene(num)
 {
   if (num == 1){
-    x1 = -0.5,  y1 = 1,     z1 = -3;
-    x2 = 2,     y2 = 1,     z2 = 0;
-    x3 = -2,    y3 = -1,    z3 = 1;
-    x4 = 0,     y4 = -1.5,  z4 = -1;
+    x1 = -0.5,  y1 = 1,     z1 = -3;      //Sphere
+    x2 = 2,     y2 = 1,     z2 = 0;       //Sphere
+    x3 = -2,    y3 = -1,    z3 = 1;       //Sphere
+    x4 = 0,     y4 = -1.5,  z4 = -1;      //Sphere
+    x5 = 2,     y5 = -1,    z5 = 2;       //Cube
 
-    gl.uniform3f(color1, 1.0, 0.5725, 0.0)
-    gl.uniform3f(color2, 1.0, 0.749, 0.0)
-    gl.uniform3f(color3, 0.106, 0.106, 0.702)
-    gl.uniform3f(color4, 0.043, 0.38, 0.517)
+    gl.uniform3f(sColor1, 1.0, 0.5725, 0.0);
+    gl.uniform3f(sColor2, 1.0, 0.749, 0.0);
+    gl.uniform3f(sColor3, 0.106, 0.106, 0.702);
+    gl.uniform3f(sColor4, 0.043, 0.38, 0.517);
+    gl.uniform3f(cColor1, 0.0, 0.9, 0.0);
   }
   else{
-    x1 = 2.5,  y1 = 0,     z1 = -4;
-    x2 = -2,     y2 = 1,     z2 = -1;
-    x3 = 0,    y3 = -1.5,    z3 = 1;
-    x4 = 0.5,     y4 = -1.5,  z4 = -3;
+    x1 = 2.5,  y1 = 0,     z1 = -4;       //Sphere
+    x2 = -2,     y2 = 1,     z2 = -1;     //Sphere
+    x3 = 0,    y3 = -1.5,    z3 = 1;      //Sphere
+    x4 = 0.5,     y4 = -1.5,  z4 = -3;    //Sphere
+    x5 = 2,     y5 = -1,    z5 = 2;       //Cube
 
-    gl.uniform3f(color1, 0.0, 0.8, 0.0)
-    gl.uniform3f(color2, 0.0, 0.6, 0.6)
-    gl.uniform3f(color3, 1.0, .455, 0.0)
-    gl.uniform3f(color4, 1.0, 0.0, 0.0)
+    gl.uniform3f(sColor1, 0.0, 0.8, 0.0);
+    gl.uniform3f(sColor2, 0.0, 0.6, 0.6);
+    gl.uniform3f(sColor3, 1.0, .455, 0.0);
+    gl.uniform3f(sColor4, 1.0, 0.0, 0.0);
+    gl.uniform3f(cColor1, 0.0, 0.9, 0.0);
   }
 
   cameraFrom = { x: EyeX,//Math.sin(t * 0.4) * 18,
@@ -213,6 +220,7 @@ function drawScene(num)
   gl.uniform3f(sphere2Center, x2, y2, z2);
   gl.uniform3f(sphere3Center, x3, y3, z3);
   gl.uniform3f(sphere4Center, x4, y4, z4);
+  gl.uniform3f(cube1Center, x5, y5, z5);
   gl.uniform1i(depthID, depth);
 
   gl.viewport(0, 0, canvas.width/2, canvas.height);
@@ -378,22 +386,17 @@ function keydown(ev){
       if (depth > 0)
         depth--;
       break;
-    /* case 72:        //H key
+    case 72:        //H key
       if (help)
       {
-        controls.innerHTML = "Press H for help <br> <br> <br> <br>";
-        controls2.innerHTML = "";
-        controls3.innerHTML = "";
+        controls1.style.display="none";
       }
       else
       {
-        controls.innerHTML = "Press H to toggle off help<br>A/D, W/S, Q/E: Move Camera along x/y/z<br>Left/Right,Up/Down: Pan/Tilt camera<br>J/L, I/K, U/O: Move LookAt point along x/y/z";
-        //controls.innerHTML = "Press H to toggle off help<br>A and D: Move camera along X<br>W and S: Move camera along Y<br>Q and E: Move camera along Z";
-        controls2.innerHTML = "R: Reset Camera<br>1-5: Change solver type<br>B: Toggle Wall dampening<br><br>";
-        controls3.innerHTML = "";
+        controls1.style.display="block";
       }
       help = !help;
-      break; */
+      break; 
     default: return;
   }
   //updateValues(false);
