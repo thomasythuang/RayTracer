@@ -8,7 +8,8 @@ var DEFAULT_LIGHT_X = 20, DEFAULT_LIGHT_Y = 20, DEFAULT_LIGHT_Z = -20;
 var DEFAULT_LOOK = 0.00;
 var EyeX = DEFAULT_EYE_X, EyeY = DEFAULT_EYE_Y, EyeZ = DEFAULT_EYE_Z;//Eye Position
 var lookX = DEFAULT_LOOK, lookY = DEFAULT_LOOK, lookZ = DEFAULT_LOOK;//Look at Point
-var lightX = DEFAULT_LIGHT_X, lightY = DEFAULT_LIGHT_Y, lightZ = DEFAULT_LIGHT_Z;
+var light1X = DEFAULT_LIGHT_X, light1Y = DEFAULT_LIGHT_Y, light1Z = DEFAULT_LIGHT_Z;
+var light2X = (-1) * DEFAULT_LIGHT_X, light2Y = DEFAULT_LIGHT_Y, light2Z = (-1) * DEFAULT_LIGHT_Z;
 var g_last = Date.now();
 var rotStep = 0.05;      //Camera rotation step
 var paused = false;
@@ -16,6 +17,7 @@ var sceneNum = 1;
 var depth = 1.0;
 var help = true;
 var light1Switch = 1;
+var lightNum = 1;
 var u_amb = 0.1;
 
 function initGL(canvas) {
@@ -202,10 +204,16 @@ function drawScene(num)
                            vectMul(cameraLeft, ratio));
   cameraBotRight = vectSub(vectSub(cameraCenter, cameraUp),
                            vectMul(cameraLeft, ratio));
-
-  lightPos = {x: lightX,
-              y: lightY,
-              z: lightZ};
+  if (lightNum > 1){
+    lightPos = {x: light2X,
+                y: light2Y,
+                z: light2Z};
+  }
+  else{
+    lightPos = {x: light1X,
+                y: light1Y,
+                z: light1Z};
+  }
   lightDir = normalize(vectSub(lightPos, cameraTo));
   //lightDir = normalize(vectSub(cameraTo, lightPos));
 
@@ -324,22 +332,40 @@ function keydown(ev){
       lookX -= 0.5;
       break;
     case 100:        //Num4 key
-      lightZ -= 1;
+      if (lightNum > 1)
+        light2Z -= 1;
+      else
+        light1Z -= 1;
       break;
     case 102:        //Num6 key
-      lightZ += 1;
+      if (lightNum > 1)
+        light2Z += 1;
+      else
+        light1Z += 1;
       break;
     case 101:        //Num5 key
-      lightY += 1;
+      if (lightNum > 1)
+        light2Y += 1;
+      else
+        light1Y += 1;
       break;
     case 98:        //Num2 key
-      lightY -= 1;
+      if (lightNum > 1)
+        light2Y += 1;
+      else
+        light1Y += 1;
       break;
     case 97:        //Num1 key
-      lightX += 1;
+      if (lightNum > 1)
+        light2X += 1;
+      else
+        light1X += 1;
       break;
     case 99:        //Num3 key
-      lightX -= 1;
+      if (lightNum > 1)
+        light2X -= 1;
+      else
+        light1X -= 1;
       break;
     case 32:        //Space bar: pause
       pause();
@@ -349,10 +375,14 @@ function keydown(ev){
       EyeY = DEFAULT_EYE_Y;
       EyeZ = DEFAULT_EYE_Z;
       lookX = lookY = lookZ = DEFAULT_LOOK;
-      lightX = DEFAULT_LIGHT_X;
-      lightY = DEFAULT_LIGHT_Y;
-      lightZ = DEFAULT_LIGHT_Z;
+      light1X = DEFAULT_LIGHT_X;
+      light1Y = DEFAULT_LIGHT_Y;
+      light1Z = DEFAULT_LIGHT_Z;
+      light2X = DEFAULT_LIGHT_X * -1;
+      light2Y = DEFAULT_LIGHT_Y;
+      light2Z = DEFAULT_LIGHT_Y * -1;
       depth = 1;
+      light1Switch = 1;
       break;
     case 37:        //Left arrow key
       rotate("left");
@@ -379,6 +409,12 @@ function keydown(ev){
     case 188:       //Comma
       if (depth > 0.0)
         depth--;
+      break;
+    case 187:       //Equals Sign
+      if (lightNum > 1)
+        lightNum = 1;
+      else
+        lightNum = 2;
       break;
     case 219:       //Open Bracket
       if (light1Switch > 0)
@@ -439,13 +475,22 @@ function updateValues(){
   looky.innerHTML = Math.floor(lookY * 10000)/10000;
   lookz.innerHTML = Math.floor(lookZ * 10000)/10000;
 
-  lx.innerHTML = Math.floor(lightX * -10000)/10000;
-  ly.innerHTML = Math.floor(lightY * 10000)/10000;
-  lz.innerHTML = Math.floor(lightZ * 10000)/10000;
+  if (lightNum == 1){
+    lx.innerHTML = Math.floor(light1X * -10000)/10000;
+    ly.innerHTML = Math.floor(light1Y * 10000)/10000;
+    lz.innerHTML = Math.floor(light1Z * 10000)/10000;
+  }
+  else{
+    lx.innerHTML = Math.floor(light2X * -10000)/10000;
+    ly.innerHTML = Math.floor(light2Y * 10000)/10000;
+    lz.innerHTML = Math.floor(light2Z * 10000)/10000;
+  }
 
   lvx.innerHTML = Math.floor(lightDir.x * 10000)/10000;
   lvy.innerHTML = Math.floor(lightDir.y * -10000)/10000;
   lvz.innerHTML = Math.floor(lightDir.z * -10000)/10000;
+
+  lightN.innerHTML = lightNum;
 
   rDepth.innerHTML = depth;
 }
