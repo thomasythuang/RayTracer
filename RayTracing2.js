@@ -13,8 +13,10 @@ var g_last = Date.now();
 var rotStep = 0.05;      //Camera rotation step
 var paused = false;
 var sceneNum = 1;
-var depth = 1;
+var depth = 1.0;
 var help = true;
+var light1Switch = 1;
+var u_amb = 0.1;
 
 function initGL(canvas) {
   try {
@@ -85,7 +87,7 @@ function initShaders()
   gl.enableVertexAttribArray(aPlotPosition);
 
   cameraPos = gl.getUniformLocation(shaderProgram, "cameraPos");
-  light = gl.getUniformLocation(shaderProgram, "lightDir")
+  light1 = gl.getUniformLocation(shaderProgram, "light1Dir")
   sphere1Center = gl.getUniformLocation(shaderProgram, "sphere1Center");
   sphere2Center = gl.getUniformLocation(shaderProgram, "sphere2Center");
   sphere3Center = gl.getUniformLocation(shaderProgram, "sphere3Center");
@@ -96,7 +98,9 @@ function initShaders()
   sColor3 = gl.getUniformLocation(shaderProgram, "sColor3");
   sColor4 = gl.getUniformLocation(shaderProgram, "sColor4");
   cColor1 = gl.getUniformLocation(shaderProgram, "cColor1");
+  u_ambID = gl.getUniformLocation(shaderProgram, "u_amb");
   depthID = gl.getUniformLocation(shaderProgram, "depth");
+  light1On = gl.getUniformLocation(shaderProgram, "light1Switch");
 }
 
 
@@ -215,13 +219,15 @@ function drawScene(num)
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(corners), gl.STATIC_DRAW);
 
   gl.uniform3f(cameraPos, cameraFrom.x, cameraFrom.y, cameraFrom.z);
-  gl.uniform3f(light, lightDir.x, lightDir.y, lightDir.z);
+  gl.uniform3f(light1, lightDir.x, lightDir.y, lightDir.z);
   gl.uniform3f(sphere1Center, x1, y1, z1);
   gl.uniform3f(sphere2Center, x2, y2, z2);
   gl.uniform3f(sphere3Center, x3, y3, z3);
   gl.uniform3f(sphere4Center, x4, y4, z4);
   gl.uniform3f(cube1Center, x5, y5, z5);
-  gl.uniform1i(depthID, depth);
+  gl.uniform1f(depthID, depth);
+  gl.uniform1i(light1On, light1Switch);
+  gl.uniform1f(u_ambID, u_amb);
 
   gl.viewport(0, 0, canvas.width/2, canvas.height);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -283,51 +289,39 @@ function keydown(ev){
   {
     case 69:        //E key
       EyeZ += 1;
-      //zpos.innerHTML = EyeZ;
       break;
     case 81:        //Q key
       EyeZ -= 1;
-      //zpos.innerHTML = EyeZ;
       break;
     case 87:        //W key
       EyeY += 1;
-      //ypos.innerHTML = EyeY; 
       break;
     case 83:        //S key
       EyeY -= 1;
-      //ypos.innerHTML = EyeY;
       break;
     case 65:        //A key
       EyeX += 1;
-      //xpos.innerHTML = EyeX;
       break;
     case 68:        //D key
       EyeX -= 1;
-      //xpos.innerHTML = EyeX;
       break;
       case 79:        //O key
       lookZ += 0.5;
-      //zpos.innerHTML = EyeZ;
       break;
     case 85:        //U key
       lookZ -= 0.5;
-      //zpos.innerHTML = EyeZ;
       break;
     case 73:        //I key
       lookY += 0.5;
-      //ypos.innerHTML = EyeY; 
       break;
     case 75:        //K key
       lookY -= 0.5;
-      //ypos.innerHTML = EyeY;
       break;
     case 74:        //J key
       lookX += 0.5;
-      //xpos.innerHTML = EyeX;
       break;
     case 76:        //L key
       lookX -= 0.5;
-      //xpos.innerHTML = EyeX;
       break;
     case 100:        //Num4 key
       lightZ -= 1;
@@ -379,12 +373,18 @@ function keydown(ev){
       sceneNum = 2;
       break;
     case 190:       //Period
-      if (depth < 3)
+      if (depth < 3.0)
         depth++;
       break;
     case 188:       //Comma
-      if (depth > 0)
+      if (depth > 0.0)
         depth--;
+      break;
+    case 219:       //Open Bracket
+      if (light1Switch > 0)
+        light1Switch = 0;
+      else
+        light1Switch = 1;
       break;
     case 72:        //H key
       if (help)

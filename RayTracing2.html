@@ -26,7 +26,7 @@
 <script id="shader-fs" type="x-shader/x-fragment">
   precision mediump float;
 
-  uniform vec3 lightDir;
+  uniform vec3 light1Dir;
   varying vec3 vPosition;
   uniform vec3 cameraPos;
   uniform vec3 sphere1Center;
@@ -39,7 +39,9 @@
   uniform vec3 sColor3;
   uniform vec3 sColor4;
   uniform vec3 cColor1;
-  uniform int depth;
+  uniform float u_amb; //ambient light brightness
+  uniform float depth;
+  uniform int light1Switch;
 
   //Calculate the intersection (or non-intersection) or a ray and a sphere
   bool intersectSphere(vec3 center, vec3 lStart, vec3 lDir, 
@@ -86,7 +88,7 @@
   }
 
   vec3 lightAt(vec3 N, vec3 V, vec3 color) {
-    vec3 L = lightDir;
+    vec3 L = light1Dir;
     vec3 R = reflect(-L, N);
 
     float c = 0.3 + 0.4 * pow(max(dot(R, V), 0.0), 30.0) + 0.7 * dot(L, N);
@@ -172,43 +174,59 @@
     vec3 p1, norm, p2;
     vec3 col, colT, colM, col3;
     bool shape = false; //Whether or not a ray is reflected off a shape (affects reflectance)
+    
     if (intersectWorld(cameraPos, cameraDir, p1,
                        norm, colT, 0, shape)) {
-      col = lightAt(norm, -cameraDir, colT);
+      if (light1Switch > 0)
+        col = lightAt(norm, -cameraDir, colT);
+      else
+        col = vec3(u_amb, u_amb, u_amb) * colT;
       if (shape)
         colM = (colT + vec3(0.1)) / 1.7;
       else
         colM = (colT + vec3(0.9)) / 1.7;
-      if (depth > 0){
+      if (depth > 0.0){
         cameraDir = reflect(cameraDir, norm);
         if (intersectWorld(p1, cameraDir, p2, norm, colT, 1, shape)) {
-          col += lightAt(norm, -cameraDir, colT) * colM;
+          if (light1Switch > 0)
+            col += lightAt(norm, -cameraDir, colT) * colM;
+          else
+            col += vec3(u_amb, u_amb, u_amb) * colT;
           if (shape)
             colM = (colT + vec3(0.1)) / 1.7;
           else
             colM *= (colT + vec3(0.7)) / 1.7;
-          if (depth > 1){
+          if (depth > 1.0){
             cameraDir = reflect(cameraDir, norm);
             if (intersectWorld(p2, cameraDir, p1, norm, colT, 2, shape)) {
-              col += lightAt(norm, -cameraDir, colT) * colM;
+              if (light1Switch > 0)
+                col += lightAt(norm, -cameraDir, colT) * colM;
+              else
+                col += vec3(u_amb/depth, u_amb/depth, u_amb/depth) * colT;
               if (shape)
                 colM = (colT + vec3(0.1)) / 1.7;
               else
                 colM *= (colT + vec3(0.7)) / 1.7;
-              if (depth > 2){
+              if (depth > 2.0){
                 cameraDir = reflect(cameraDir, norm);
                 if (intersectWorld(p2, cameraDir, p1, norm, colT, 3, shape)) {
-                  col += lightAt(norm, -cameraDir, colT) * colM;
+                  if (light1Switch > 0)
+                    col += lightAt(norm, -cameraDir, colT) * colM;
+                  else
+                    col += vec3(u_amb/depth, u_amb/depth, u_amb/depth) * colT;
                 }
               }
             }
           }
         }
       }
+      //if (light1Switch == 0)
+      //  col = vec3(u_amb, u_amb, u_amb) * col;
       gl_FragColor = vec4(col, 1.0);
     }
     else {
-      gl_FragColor = vec4(0.2, 0.7, 0.9, 1.0);
+      //Background color if rays hit nothing
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);//vec4(0.2, 0.7, 0.9, 1.0); 
     }
   }
 </script>
