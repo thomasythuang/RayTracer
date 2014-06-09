@@ -1,11 +1,18 @@
+//  Thomas Huang
+//  EECS 395 Intermediate Graphics (Spring 2014)
+//  Project B: Chessboard
 //
+//  This project uses ray-tracing to display a scene without using WebGL's camera
+//  It is named Chessboard due to the appearance of the ground plane used
+//  
+//  This project uses shaders in the html file instead of the javascript file.
+//  This makes reading and editing the shader code substantially easier.
+//  Additionally, all of the ray-tracing calculations are performed in the shaders.
+//  The javascript file defines variables (such as camera position, light position,
+//  .etc) and then passes them to the shaders for calculations. There are strong
+//  advantages and disadvantages to this method, which are outlined in the project
+//  report.
 //
-//
-//
-//
-//
-//
-
 
 //Global Variables
 var gl;
@@ -25,6 +32,24 @@ var light1Switch = 1;   //On/off for light 1
 var light2Switch = 1;   //On/off for light 2
 var lightNum = 1;       //Which light's info is displayed and adjustable
 var u_amb = 0.1;
+var canvas;
+
+function main()
+{
+  canvas = document.getElementById("canvas");
+  initGL(canvas);
+  initShaders()
+
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+  gl.clearDepth(1.0);
+
+  initBuffers();
+
+  document.onkeydown = function(ev){keydown(ev);};
+
+  tick();
+}
 
 function initGL(canvas) {
   try {
@@ -113,7 +138,6 @@ function initShaders()
   light2On = gl.getUniformLocation(shaderProgram, "light2Switch");
 }
 
-
 function initBuffers()
 {
   vertexPositionBuffer = gl.createBuffer();
@@ -134,36 +158,32 @@ function initBuffers()
   gl.vertexAttribPointer(aPlotPosition, 3, gl.FLOAT, false, 0, 0);
 }
 
+//Vector utility functions
 function crossProd(v1, v2) {
   return { x: v1.y*v2.z - v2.y*v1.z,
            y: v1.z*v2.x - v2.z*v1.x,
            z: v1.x*v2.y - v2.x*v1.y };
 }
-
 function normalize(v) {
   l = Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
   return { x: v.x/l, y: v.y/l, z: v.z/l };
 }
-
 function vectAdd(v1, v2) {
   return { x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z };
 }
-
 function vectSub(v1, v2) {
   return { x: v1.x - v2.x, y: v1.y - v2.y, z: v1.z - v2.z };
 }
-
 function vectMul(v, l) {
   return { x: v.x*l, y: v.y*l, z: v.z*l };
 }
-
 function pushVec(v, arr) {
   arr.push(v.x, v.y, v.z);
 }
 
-t = 0;
 function drawScene(num)
 {
+  //Various positions/colors for each scene
   if (num == 1){
     x1 = -0.5,  y1 = 1,     z1 = -3;      //Sphere
     x2 = 2,     y2 = 1,     z2 = 0;       //Sphere
@@ -178,10 +198,10 @@ function drawScene(num)
     gl.uniform3f(cColor1, 0.0, 0.9, 0.0);
   }
   else{
-    x1 = 2.5,  y1 = 0,     z1 = -4;       //Sphere
-    x2 = -2,     y2 = 1,     z2 = -1;     //Sphere
-    x3 = 0,    y3 = -1.5,    z3 = 1;      //Sphere
-    x4 = 0.5,     y4 = -1.5,  z4 = -3;    //Sphere
+    x1 = 2.5,   y1 = 0,     z1 = -4;      //Sphere
+    x2 = -2,    y2 = 1,     z2 = -1;      //Sphere
+    x3 = 0,     y3 = -1.5,  z3 = 1;       //Sphere
+    x4 = 0.5,   y4 = -1.5,  z4 = -3;      //Sphere
     x5 = 2,     y5 = -1,    z5 = 2;       //Cube
 
     gl.uniform3f(sColor1, 0.0, 0.8, 0.0);
@@ -191,19 +211,20 @@ function drawScene(num)
     gl.uniform3f(cColor1, 0.0, 0.9, 0.0);
   }
 
-  cameraFrom = { x: EyeX,//Math.sin(t * 0.4) * 18,
-                 y: EyeY,//Math.sin(t * 0.13) * 5 + 5,
-                 z: EyeZ};//Math.cos(t * 0.4) * 18 };
-  cameraTo = { x:lookX, y:lookY, z:lookZ };
+  cameraEye = { x: EyeX,                                    //Eye Point
+                 y: EyeY,
+                 z: EyeZ};
+  cameraLookAt = { x:lookX, y:lookY, z:lookZ };             //LookAt Point
+
   cameraPersp = 6;
-  up = { x: 0, y: 1, z: 0 };
-  cameraDir = normalize(vectSub(cameraTo, cameraFrom));
+
+  up = { x: 0, y: 1, z: 0 };                                //Up Vector
+
+  cameraDir = normalize(vectSub(cameraLookAt, cameraEye));  //View direction vector
 
   cameraLeft = normalize(crossProd(cameraDir, up));
   cameraUp = normalize(crossProd(cameraLeft, cameraDir));
-
-  cameraCenter = vectAdd(cameraFrom, vectMul(cameraDir, cameraPersp));
-
+  cameraCenter = vectAdd(cameraEye, vectMul(cameraDir, cameraPersp));
   cameraTopLeft  = vectAdd(vectAdd(cameraCenter, cameraUp),
                            vectMul(cameraLeft, ratio));
   cameraBotLeft  = vectAdd(vectSub(cameraCenter, cameraUp),
@@ -213,16 +234,6 @@ function drawScene(num)
   cameraBotRight = vectSub(vectSub(cameraCenter, cameraUp),
                            vectMul(cameraLeft, ratio));
 
-  light2Pos = {x: light2X,
-              y: light2Y,
-              z: light2Z};
-  light1Pos = {x: light1X,
-              y: light1Y,
-              z: light1Z};
-
-  light1Dir = normalize(vectSub(light1Pos, cameraTo));
-  light2Dir = normalize(vectSub(light2Pos, cameraTo));
-
   corners = [];
   pushVec(cameraTopRight, corners);
   pushVec(cameraTopLeft, corners);
@@ -231,7 +242,17 @@ function drawScene(num)
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(corners), gl.STATIC_DRAW);
 
-  gl.uniform3f(cameraPos, cameraFrom.x, cameraFrom.y, cameraFrom.z);
+  light2Pos = {x: light2X,
+              y: light2Y,
+              z: light2Z};
+  light1Pos = {x: light1X,
+              y: light1Y,
+              z: light1Z};
+
+  light1Dir = normalize(vectSub(light1Pos, cameraLookAt));
+  light2Dir = normalize(vectSub(light2Pos, cameraLookAt));
+
+  gl.uniform3f(cameraPos, cameraEye.x, cameraEye.y, cameraEye.z);
   gl.uniform3f(light1, light1Dir.x, light1Dir.y, light1Dir.z);
   gl.uniform3f(light2, light2Dir.x, light2Dir.y, light2Dir.z);
   gl.uniform3f(sphere1Center, x1, y1, z1);
@@ -253,26 +274,6 @@ function drawScene(num)
   updateValues();
 }
 
-var timer = 0;
-
-var canvas;
-function main()
-{
-  canvas = document.getElementById("canvas");
-  initGL(canvas);
-  initShaders()
-
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
-
-  gl.clearDepth(1.0);
-
-  initBuffers();
-
-  document.onkeydown = function(ev){keydown(ev);};
-
-  tick();
-}
-
 function tick()
 {
   drawScene(sceneNum);
@@ -280,21 +281,6 @@ function tick()
   requestAnimationFrame(function(){
       tick();            
   });
-}
-
-function pause()
-{
-  /*
-  paused = !paused;
-  if (paused) {
-    tick();
-  }
-  else {
-    cancelAnimationFrame(function(){
-      tick();});
-    return;
-  }
-  */
 }
 
 var ratio = 1; 
@@ -451,8 +437,8 @@ function keydown(ev){
   }
 }
 
+//Rotate the camera left/right/up/down
 function rotate(dir){
-//Temp vars
 var tempx = EyeX - lookX;
 var tempy = EyeY - lookY;
 var tempz = EyeZ - lookZ;
