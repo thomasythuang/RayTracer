@@ -1,11 +1,7 @@
 <html>
 
 <head>
-<title>Ray tracer using WebGL</title>
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
-
-<!--  I chose to write shaders as html scripts, which removes the need to 
-      use the quotes notation used when writing them in the js file-->
+<title>Intermediate Graphics Project B: Ray Traced 3D Scene</title>
 
 <!-- Vertex Shader -->
 <script id="shader-vs" type="x-shader/x-vertex">
@@ -22,11 +18,12 @@
 </script>
 
 <!--  Fragment Shader: Calculating the rays in the shaders 
-      removes the need for textures -->
+      removes the need for textures and allows for real time rendering-->
 <script id="shader-fs" type="x-shader/x-fragment">
   precision mediump float;
 
   uniform vec3 light1Dir;
+  uniform vec3 light2Dir;
   varying vec3 vPosition;
   uniform vec3 cameraPos;
   uniform vec3 sphere1Center;
@@ -39,9 +36,9 @@
   uniform vec3 sColor3;
   uniform vec3 sColor4;
   uniform vec3 cColor1;
-  uniform float u_amb; //ambient light brightness
   uniform float depth;
   uniform int light1Switch;
+  uniform int light2Switch;
 
   //Calculate the intersection (or non-intersection) or a ray and a sphere
   bool intersectSphere(vec3 center, vec3 lStart, vec3 lDir, 
@@ -88,14 +85,24 @@
   }
 
   vec3 lightAt(vec3 N, vec3 V, vec3 color) {
-    vec3 L = light1Dir;
-    vec3 R = reflect(-L, N);
+    vec3 L1 = light1Dir;
+    vec3 R1 = reflect(-L1, N);
+    vec3 L2 = light2Dir;
+    vec3 R2 = reflect(-L2, N);
 
-    float c = 0.3 + 0.4 * pow(max(dot(R, V), 0.0), 30.0) + 0.7 * dot(L, N);
-
+    float c = 0.1;
+    if (light1Switch > 0){
+      c += 0.4 * pow(max(dot(R1, V), 0.0), 30.0) + 0.6 * dot(L1, N);
+    }
+    if (light2Switch > 0){
+      c += 0.4 * pow(max(dot(R2, V), 0.0), 30.0) + 0.6 * dot(L2, N);
+    }
+    
+    /* 
     if (c > 1.0) {
       return mix(color, vec3(1.6, 1.6, 1.6), c - 1.0);
     }
+    */
 
     return c * color;
   }
@@ -177,10 +184,7 @@
     
     if (intersectWorld(cameraPos, cameraDir, p1,
                        norm, colT, 0, shape)) {
-      if (light1Switch > 0)
-        col = lightAt(norm, -cameraDir, colT);
-      else
-        col = vec3(u_amb, u_amb, u_amb) * colT;
+      col = lightAt(norm, -cameraDir, colT);
       if (shape)
         colM = (colT + vec3(0.1)) / 1.7;
       else
@@ -188,10 +192,7 @@
       if (depth > 0.0){
         cameraDir = reflect(cameraDir, norm);
         if (intersectWorld(p1, cameraDir, p2, norm, colT, 1, shape)) {
-          if (light1Switch > 0)
-            col += lightAt(norm, -cameraDir, colT) * colM;
-          else
-            col += vec3(u_amb, u_amb, u_amb) * colT;
+          col += lightAt(norm, -cameraDir, colT) * colM;
           if (shape)
             colM = (colT + vec3(0.1)) / 1.7;
           else
@@ -199,10 +200,7 @@
           if (depth > 1.0){
             cameraDir = reflect(cameraDir, norm);
             if (intersectWorld(p2, cameraDir, p1, norm, colT, 2, shape)) {
-              if (light1Switch > 0)
-                col += lightAt(norm, -cameraDir, colT) * colM;
-              else
-                col += vec3(u_amb/depth, u_amb/depth, u_amb/depth) * colT;
+              col += lightAt(norm, -cameraDir, colT) * colM;
               if (shape)
                 colM = (colT + vec3(0.1)) / 1.7;
               else
@@ -210,18 +208,13 @@
               if (depth > 2.0){
                 cameraDir = reflect(cameraDir, norm);
                 if (intersectWorld(p2, cameraDir, p1, norm, colT, 3, shape)) {
-                  if (light1Switch > 0)
-                    col += lightAt(norm, -cameraDir, colT) * colM;
-                  else
-                    col += vec3(u_amb/depth, u_amb/depth, u_amb/depth) * colT;
+                  col += lightAt(norm, -cameraDir, colT) * colM;
                 }
               }
             }
           }
         }
       }
-      //if (light1Switch == 0)
-      //  col = vec3(u_amb, u_amb, u_amb) * col;
       gl_FragColor = vec4(col, 1.0);
     }
     else {

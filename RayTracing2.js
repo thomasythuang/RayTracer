@@ -1,4 +1,10 @@
-
+//
+//
+//
+//
+//
+//
+//
 
 
 //Global Variables
@@ -9,15 +15,15 @@ var DEFAULT_LOOK = 0.00;
 var EyeX = DEFAULT_EYE_X, EyeY = DEFAULT_EYE_Y, EyeZ = DEFAULT_EYE_Z;//Eye Position
 var lookX = DEFAULT_LOOK, lookY = DEFAULT_LOOK, lookZ = DEFAULT_LOOK;//Look at Point
 var light1X = DEFAULT_LIGHT_X, light1Y = DEFAULT_LIGHT_Y, light1Z = DEFAULT_LIGHT_Z;
-var light2X = (-1) * DEFAULT_LIGHT_X, light2Y = DEFAULT_LIGHT_Y, light2Z = (-1) * DEFAULT_LIGHT_Z;
-var g_last = Date.now();
+var light2X = -1 * DEFAULT_LIGHT_X, light2Y = DEFAULT_LIGHT_Y, light2Z = -1 * DEFAULT_LIGHT_Z;
 var rotStep = 0.05;      //Camera rotation step
-var paused = false;
-var sceneNum = 1;
-var depth = 1.0;
-var help = true;
-var light1Switch = 1;
-var lightNum = 1;
+//var paused = false;
+var sceneNum = 1;       //Which scene is displayed
+var depth = 1.0;        //User-adjustable recursion depth
+var help = true;        //On/off for controls help
+var light1Switch = 1;   //On/off for light 1
+var light2Switch = 1;   //On/off for light 2
+var lightNum = 1;       //Which light's info is displayed and adjustable
 var u_amb = 0.1;
 
 function initGL(canvas) {
@@ -90,6 +96,7 @@ function initShaders()
 
   cameraPos = gl.getUniformLocation(shaderProgram, "cameraPos");
   light1 = gl.getUniformLocation(shaderProgram, "light1Dir")
+  light2 = gl.getUniformLocation(shaderProgram, "light2Dir")
   sphere1Center = gl.getUniformLocation(shaderProgram, "sphere1Center");
   sphere2Center = gl.getUniformLocation(shaderProgram, "sphere2Center");
   sphere3Center = gl.getUniformLocation(shaderProgram, "sphere3Center");
@@ -103,6 +110,7 @@ function initShaders()
   u_ambID = gl.getUniformLocation(shaderProgram, "u_amb");
   depthID = gl.getUniformLocation(shaderProgram, "depth");
   light1On = gl.getUniformLocation(shaderProgram, "light1Switch");
+  light2On = gl.getUniformLocation(shaderProgram, "light2Switch");
 }
 
 
@@ -193,9 +201,9 @@ function drawScene(num)
 
   cameraLeft = normalize(crossProd(cameraDir, up));
   cameraUp = normalize(crossProd(cameraLeft, cameraDir));
-  // cameraFrom + cameraDir * cameraPersp
+
   cameraCenter = vectAdd(cameraFrom, vectMul(cameraDir, cameraPersp));
-  // cameraCenter + cameraUp + cameraLeft * ratio
+
   cameraTopLeft  = vectAdd(vectAdd(cameraCenter, cameraUp),
                            vectMul(cameraLeft, ratio));
   cameraBotLeft  = vectAdd(vectSub(cameraCenter, cameraUp),
@@ -204,20 +212,17 @@ function drawScene(num)
                            vectMul(cameraLeft, ratio));
   cameraBotRight = vectSub(vectSub(cameraCenter, cameraUp),
                            vectMul(cameraLeft, ratio));
-  if (lightNum > 1){
-    lightPos = {x: light2X,
-                y: light2Y,
-                z: light2Z};
-  }
-  else{
-    lightPos = {x: light1X,
-                y: light1Y,
-                z: light1Z};
-  }
-  lightDir = normalize(vectSub(lightPos, cameraTo));
-  //lightDir = normalize(vectSub(cameraTo, lightPos));
 
-  //corners = [1.2, 1, -12, -1.2, 1, -12, 1.2, -1, -12, -1.2, -1, -12];
+  light2Pos = {x: light2X,
+              y: light2Y,
+              z: light2Z};
+  light1Pos = {x: light1X,
+              y: light1Y,
+              z: light1Z};
+
+  light1Dir = normalize(vectSub(light1Pos, cameraTo));
+  light2Dir = normalize(vectSub(light2Pos, cameraTo));
+
   corners = [];
   pushVec(cameraTopRight, corners);
   pushVec(cameraTopLeft, corners);
@@ -227,7 +232,8 @@ function drawScene(num)
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(corners), gl.STATIC_DRAW);
 
   gl.uniform3f(cameraPos, cameraFrom.x, cameraFrom.y, cameraFrom.z);
-  gl.uniform3f(light1, lightDir.x, lightDir.y, lightDir.z);
+  gl.uniform3f(light1, light1Dir.x, light1Dir.y, light1Dir.z);
+  gl.uniform3f(light2, light2Dir.x, light2Dir.y, light2Dir.z);
   gl.uniform3f(sphere1Center, x1, y1, z1);
   gl.uniform3f(sphere2Center, x2, y2, z2);
   gl.uniform3f(sphere3Center, x3, y3, z3);
@@ -235,6 +241,7 @@ function drawScene(num)
   gl.uniform3f(cube1Center, x5, y5, z5);
   gl.uniform1f(depthID, depth);
   gl.uniform1i(light1On, light1Switch);
+  gl.uniform1i(light2On, light2Switch);
   gl.uniform1f(u_ambID, u_amb);
 
   gl.viewport(0, 0, canvas.width/2, canvas.height);
@@ -351,9 +358,9 @@ function keydown(ev){
       break;
     case 98:        //Num2 key
       if (lightNum > 1)
-        light2Y += 1;
+        light2Y -= 1;
       else
-        light1Y += 1;
+        light1Y -= 1;
       break;
     case 97:        //Num1 key
       if (lightNum > 1)
@@ -380,9 +387,10 @@ function keydown(ev){
       light1Z = DEFAULT_LIGHT_Z;
       light2X = DEFAULT_LIGHT_X * -1;
       light2Y = DEFAULT_LIGHT_Y;
-      light2Z = DEFAULT_LIGHT_Y * -1;
+      light2Z = DEFAULT_LIGHT_Z * -1;
       depth = 1;
       light1Switch = 1;
+      light2Switch = 1;
       break;
     case 37:        //Left arrow key
       rotate("left");
@@ -422,6 +430,12 @@ function keydown(ev){
       else
         light1Switch = 1;
       break;
+    case 221:       //Closed Bracket
+      if (light2Switch > 0)
+        light2Switch = 0;
+      else
+        light2Switch = 1;
+      break;
     case 72:        //H key
       if (help)
       {
@@ -435,7 +449,6 @@ function keydown(ev){
       break; 
     default: return;
   }
-  //updateValues(false);
 }
 
 function rotate(dir){
@@ -454,7 +467,7 @@ var tempz = EyeZ - lookZ;
       EyeX = tempx*Math.cos(rotStep) + tempz*Math.sin(rotStep) + lookX;
       EyeZ = tempz*Math.cos(rotStep) - tempx*Math.sin(rotStep) + lookZ;
       break;
-    case "up":  //Fix up and down
+    case "up":
       EyeY = tempy*Math.cos(rotStep) + tempz*Math.sin(rotStep) + lookY;
       EyeZ = tempz*Math.cos(rotStep) - tempy*Math.sin(rotStep) + lookX;
       break;
@@ -466,6 +479,7 @@ var tempz = EyeZ - lookZ;
   }
 }
 
+//Update the values in the help box below the display
 function updateValues(){
   xpos.innerHTML = Math.floor(EyeX * -10000)/10000;
   ypos.innerHTML = Math.floor(EyeY * 10000)/10000;
@@ -475,20 +489,26 @@ function updateValues(){
   looky.innerHTML = Math.floor(lookY * 10000)/10000;
   lookz.innerHTML = Math.floor(lookZ * 10000)/10000;
 
+  //If the first light is selected, display its position and direction
   if (lightNum == 1){
     lx.innerHTML = Math.floor(light1X * -10000)/10000;
     ly.innerHTML = Math.floor(light1Y * 10000)/10000;
     lz.innerHTML = Math.floor(light1Z * 10000)/10000;
+
+    lvx.innerHTML = Math.floor(light1Dir.x * 10000)/10000;
+    lvy.innerHTML = Math.floor(light1Dir.y * -10000)/10000;
+    lvz.innerHTML = Math.floor(light1Dir.z * -10000)/10000;
   }
+  //If the second light is selected, display its position and direction
   else{
     lx.innerHTML = Math.floor(light2X * -10000)/10000;
     ly.innerHTML = Math.floor(light2Y * 10000)/10000;
     lz.innerHTML = Math.floor(light2Z * 10000)/10000;
-  }
 
-  lvx.innerHTML = Math.floor(lightDir.x * 10000)/10000;
-  lvy.innerHTML = Math.floor(lightDir.y * -10000)/10000;
-  lvz.innerHTML = Math.floor(lightDir.z * -10000)/10000;
+    lvx.innerHTML = Math.floor(light2Dir.x * 10000)/10000;
+    lvy.innerHTML = Math.floor(light2Dir.y * -10000)/10000;
+    lvz.innerHTML = Math.floor(light2Dir.z * -10000)/10000;
+  }
 
   lightN.innerHTML = lightNum;
 
