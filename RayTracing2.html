@@ -62,6 +62,7 @@
     return true;
   }
 
+  //Calculate the intersection of a ray and a cube
   bool intersectCube(vec3 center, vec3 lStart, vec3 lDir, 
                      out float dist, float size){
     vec3 c = center - lStart;
@@ -84,6 +85,7 @@
     return true;
   }
 
+  //Calculate the color of a point given two light sources (both can be on or off)
   vec3 lightAt(vec3 N, vec3 V, vec3 color) {
     vec3 L1 = light1Dir;
     vec3 R1 = reflect(-L1, N);
@@ -121,7 +123,7 @@
     h4 = intersectSphere(sphere4Center, lStart, lDir, d4, 1.0);
     h5 = intersectCube(cube1Center, lStart, lDir, d5, 1.0);
 
-    //If hitting a sphere, set color of the front-most sphere
+    //If hitting a shape, set color of the front-most shape
     if (h1 && d1 < d2 && d1 < d3 && d1 < d4 && d1 < d5) {
       pos = lStart + d1 * lDir;
       normal = pos - sphere1Center;
@@ -152,6 +154,7 @@
       color = cColor1;
       shape = false;
     }
+    //Create a checkerboard ground grid
     else if (lDir.y < -0.01) {
       pos = lStart + ((lStart.y + 2.7) / -lDir.y) * lDir;
       if (pos.x*pos.x > 80.0) {
@@ -162,10 +165,10 @@
       }
       normal = vec3(0.0, 1.0, 0.0);
       if (fract(pos.x / 2.0) > 0.5 == fract(pos.z / 2.0) > 0.5) {
-        color = vec3(0.8);
+        color = vec3(0.8);    //Color 1 of checkerboard
       }
       else {
-        color = vec3(0.4);
+        color = vec3(0.4);    //Color 2 of checkerboard
       }
     }
     else {
@@ -180,8 +183,9 @@
 
     vec3 p1, norm, p2;
     vec3 col, colT, colM, col3;
-    bool shape = false; //Whether or not a ray is reflected off a shape (affects reflectance)
+    bool shape = false; //affects shapes of different materials (different reflectance)
     
+    //Depth = 0
     if (intersectWorld(cameraPos, cameraDir, p1,
                        norm, colT, 0, shape)) {
       col = lightAt(norm, -cameraDir, colT);
@@ -189,22 +193,28 @@
         colM = (colT + vec3(0.1)) / 1.7;
       else
         colM = (colT + vec3(0.9)) / 1.7;
+
+      //Depth = 1
       if (depth > 0.0){
         cameraDir = reflect(cameraDir, norm);
         if (intersectWorld(p1, cameraDir, p2, norm, colT, 1, shape)) {
           col += lightAt(norm, -cameraDir, colT) * colM;
           if (shape)
-            colM = (colT + vec3(0.1)) / 1.7;
+            colM *= (colT + vec3(0.1)) / 1.7;
           else
             colM *= (colT + vec3(0.7)) / 1.7;
+
+          //Depth = 2
           if (depth > 1.0){
             cameraDir = reflect(cameraDir, norm);
             if (intersectWorld(p2, cameraDir, p1, norm, colT, 2, shape)) {
               col += lightAt(norm, -cameraDir, colT) * colM;
               if (shape)
-                colM = (colT + vec3(0.1)) / 1.7;
+                colM *= (colT + vec3(0.1)) / 1.7;
               else
                 colM *= (colT + vec3(0.7)) / 1.7;
+
+              //Depth = 3 (max depth)
               if (depth > 2.0){
                 cameraDir = reflect(cameraDir, norm);
                 if (intersectWorld(p2, cameraDir, p1, norm, colT, 3, shape)) {
@@ -267,21 +277,30 @@
           Press H to Hide/Show Controls
         </div>
         <div id="controls1" style="display:block; margin-left:10px">
-          <div style="display:inline-block; margin-left:0px">
-            D/A, W/S, E/Q: &nbsp&nbsp&nbsp&nbsp&nbsp Move Camera along x/y/z axes<br>
-            L/J, I/K, O/U: &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp Move Look-At Point along x/y/z axes<br>
-            (Numpad only) 1-6: Move light source along x/y/z axes <br>
-          </div>
-          <div style="display:inline-block; margin-left: 20px">
-            Arrow Keys: Rotate/Tilt Camera<br>
-            , . (Comma and Period): Decrease or increase recursion depth<br>
-            R: Reset camera values<br>
-          </div>
-        </div><br>
-        <div>
-          <div style="display:inline-block; margin-left: 10px">
-            [ (Open bracket): Toggle Light 1 on/off<br>
-            ] (Closed bracket): Toggle Light 2 on/off
+          <div>
+            <div style="display:inline-block; margin-left:0px">
+              D/A, W/S, E/Q: &nbsp&nbsp&nbsp&nbsp&nbsp Move Camera along x/y/z axes<br>
+              L/J, I/K, O/U: &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp Move Look-At Point along x/y/z axes<br>
+              (Numpad only) 1-6: Move light source along x/y/z axes <br>
+            </div>
+            <div style="display:inline-block; margin-left: 20px">
+              Arrow Keys: Rotate/Tilt Camera<br>
+              , . (Comma and Period): Decrease or increase recursion depth<br>
+              R: Reset to default values<br>
+            </div>
+          </div><br>
+          <div>
+            <div style="display:inline-block; margin-left: 0px">
+              [ (Open bracket): Toggle Light 1 on/off<br>
+              ] (Closed bracket): Toggle Light 2 on/off
+            </div>
+            <div style="display:inline-block; margin-left: 20px">
+              1: Display Scene #1<br>
+              2: Display Scene #2
+            </div>
+            <div style="display:inline-block; margin-left: 20px">
+              = (equals): Toggle selected light source<br><br>
+            </div>
           </div>
         </div>
       </div>
