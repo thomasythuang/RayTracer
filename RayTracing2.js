@@ -31,7 +31,7 @@ var help = true;        //On/off for controls help
 var light1Switch = 1;   //On/off for light 1
 var light2Switch = 1;   //On/off for light 2
 var lightNum = 1;       //Which light's info is displayed and adjustable
-var u_amb = 0.1;
+var AA = 0;
 var canvas;
 
 function main()
@@ -132,7 +132,7 @@ function initShaders()
   sColor3 = gl.getUniformLocation(shaderProgram, "sColor3");
   sColor4 = gl.getUniformLocation(shaderProgram, "sColor4");
   cColor1 = gl.getUniformLocation(shaderProgram, "cColor1");
-  u_ambID = gl.getUniformLocation(shaderProgram, "u_amb");
+  aa_ID = gl.getUniformLocation(shaderProgram, "aAlias");
   depthID = gl.getUniformLocation(shaderProgram, "depth");
   light1On = gl.getUniformLocation(shaderProgram, "light1Switch");
   light2On = gl.getUniformLocation(shaderProgram, "light2Switch");
@@ -263,7 +263,7 @@ function drawScene(num)
   gl.uniform1f(depthID, depth);
   gl.uniform1i(light1On, light1Switch);
   gl.uniform1i(light2On, light2Switch);
-  gl.uniform1f(u_ambID, u_amb);
+  gl.uniform1i(aa_ID, AA);
 
   gl.viewport(0, 0, canvas.width/2, canvas.height);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -422,6 +422,12 @@ function keydown(ev){
       else
         light2Switch = 1;
       break;
+    case 220:       //Back Slash
+      if (AA > 0)
+        AA = 0;
+      else
+        AA = 1;
+      break;
     case 72:        //H key
       if (help)
       {
@@ -495,6 +501,11 @@ function updateValues(){
     lvy.innerHTML = Math.floor(light2Dir.y * -10000)/10000;
     lvz.innerHTML = Math.floor(light2Dir.z * -10000)/10000;
   }
+
+  if (AA > 0)
+    antialiasing.innerHTML = "On";
+  else
+    antialiasing.innerHTML = "Off";
 
   lightN.innerHTML = lightNum;
 

@@ -39,6 +39,7 @@
   uniform float depth;
   uniform int light1Switch;
   uniform int light2Switch;
+  uniform int aAlias;
 
   //Calculate the intersection (or non-intersection) or a ray and a sphere
   bool intersectSphere(vec3 center, vec3 lStart, vec3 lDir, 
@@ -177,9 +178,11 @@
     return true;
   }
 
-  void main(void)
+  //void main(void)
+  vec3 rayTrace(vec3 position)
   {
-    vec3 cameraDir = normalize(vPosition - cameraPos);
+    //vec3 cameraDir = normalize(vPosition - cameraPos);
+    vec3 cameraDir = normalize(position - cameraPos);
 
     vec3 p1, norm, p2;
     vec3 col, colT, colM, col3;
@@ -225,11 +228,42 @@
           }
         }
       }
-      gl_FragColor = vec4(col, 1.0);
+      //gl_FragColor = vec4(col, 1.0);
+      return vec3(col);
     }
     else {
       //Background color if rays hit nothing
-      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);//vec4(0.2, 0.7, 0.9, 1.0); 
+      //gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);//vec4(0.2, 0.7, 0.9, 1.0);
+      return vec3(0.0, 0.0, 0.0); 
+    }
+  }
+
+  void main(void)
+  {
+    if (aAlias > 0){
+      float floati;
+      float floatj;
+      vec3 pos;
+      vec3 result = vec3(0.0, 0.0, 0.0);
+      for (float i = 0.0; i < 4.0; i++){
+        for (float j = 0.0; j < 4.0; j++){
+          floati = 0.9997 + (0.0002 * i);
+          floatj = 0.9997 + (0.0002 * i);
+          pos = vPosition;
+          pos.x *= floati;
+          pos.y *= floatj;
+          result += rayTrace(pos);
+        }
+      }
+      result.x /= 16.0;
+      result.y /= 16.0;
+      result.z /= 16.0;
+      gl_FragColor = vec4(result, 1.0);
+      
+      //gl_FragColor = vec4(rayTrace(vPosition), 1.0);
+    }
+    else{
+      gl_FragColor = vec4(rayTrace(vPosition), 1.0);
     }
   }
 </script>
@@ -269,7 +303,8 @@
           </div>
           <div style="display:inline-block; margin-left:20px">
             Recursion Depth: <span id="rDepth"></span> &nbsp&nbsp&nbsp(Possible depths: 0-3)<br>
-            Selected Light #: <span id="lightN"></span><br><br><br>
+            Selected Light #: <span id="lightN"></span><br>
+            Anti-Aliasing: <span id="antialiasing"></span><br><br>
           </div>
         </div> 
         <br>
@@ -299,7 +334,8 @@
               2: Display Scene #2
             </div>
             <div style="display:inline-block; margin-left: 20px">
-              = (equals): Toggle selected light source<br><br>
+              = (equals): Toggle selected light source<br>
+              \ (backslash): Toggle Anti-Aliasing
             </div>
           </div>
         </div>
